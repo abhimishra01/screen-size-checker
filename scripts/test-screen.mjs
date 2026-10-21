@@ -1,6 +1,7 @@
 // Known-answer tests for the screen maths and the shared calibration record. Run: npm test
 import assert from 'node:assert/strict';
-import { physicalSize, ppi, cssPxPerInch, aspect, closestSize, measureState, chipFor, report, summaryText, fix, one } from '../src/lib/screen.js';
+import { physicalSize, ppi, cssPxPerInch, aspect, closestSize, measureState, chipFor, report, summaryText, estimateAlts, fix, one } from '../src/lib/screen.js';
+import { estimateScreen, sidesFromDiagonal, altText } from '../src/lib/estimate.js';
 import {
   CARD, STORE_KEY, devPxPerMmFromObject, panelFromDiagonal, screenSignature, parseStore, pickProfile, withProfile, emptyStore, loadStore, saveStore,
 } from '../src/lib/calibration.js';
@@ -103,7 +104,9 @@ eq(measureState(pickProfile(withProfile(emptyStore(), sig, { ...card, method: 'c
 const borrowedStore = parseStore(JSON.stringify({ v: 1, profiles: { [sig]: card }, active: sig, borrowed: { '1920x1080': sig } }));
 eq(measureState(pickProfile(borrowedStore, '1920x1080')).kind, 'other', 'borrowed is not measured here');
 eq(chipFor('measured', card).short, 'Measured', 'chip measured');
-eq(chipFor('none').short, 'Not measured', 'chip none');
+eq(chipFor('none').short, 'Estimated', 'chip none says Estimated');
+eq(chipFor('other').short, 'Estimated', 'chip other screen says Estimated');
+eq(chipFor('typed').kind, 'estimate', 'typed size is only an estimate');
 
 // 11. A record written by the ruler survives a save from this tool: other screens and borrowed entries stay.
 const rulerText = JSON.stringify({ v: 1, profiles: { '1920x1080': { ...card, method: 'card' }, '2530x1170': { ...card, method: 'diagonal', diagIn: 6.1 } }, active: '1920x1080', borrowed: { '2560x1440': '1920x1080' } });
@@ -134,10 +137,113 @@ assert.ok(t.includes('Pixel density: 255 rendered pixels per inch'), t);
 r = report(env, 0);
 eq(r.phys, null, 'no calibration, no inches');
 t = summaryText(r);
-assert.ok(t.includes('not measured'), t);
+assert.ok(t.includes('Screen size: about 13.3 in (33.8 cm) diagonal, estimated'), t);
+assert.ok(!t.includes('not measured'), t);
 assert.ok(!/NaN|undefined|Infinity/.test(t), 'no bad numbers');
+eq(r.est.diag, 13.3, 'report carries the estimate');
+near(r.estPhys.diagIn, 13.3, 1e-9, 'estimate diagonal in report');
+near(r.estPhys.wIn / r.estPhys.hIn, 1440 / 900, 1e-9, 'estimate keeps the screen shape');
+// After a card match the measured value leads and the estimate follows.
+t = summaryText(report({ ...env, os: 'mac' }, perMm(227 * 2880 / 2560)));
+assert.ok(t.includes('Screen size: 13.3 in (33.8 cm) diagonal, measured with a card') && t.includes('Estimate from pixels: 13.3 in'), t);
 // Fractional DPR (Windows 125%): device pixels round.
 r = report({ ...env, sw: 1536, sh: 864, dpr: 1.25 }, 0);
 eq(r.device, { w: 1920, h: 1080 }, 'Windows 125% device pixels');
+
+
+// 13. The instant estimate. Known answers: screen CSS size x pixel ratio, matched to common devices.
+// est(cssW, cssH, dpr, os, mobile) gives { diag, alts }.
+const est = (w, h, dpr, os, mobile = false) => estimateScreen({ sw: w, sh: h, dpr, os, mobile });
+const main = (w, h, dpr, os, mobile, want, msg) => { const e = est(w, h, dpr, os, mobile); eq(e.how, 'match', msg + ' is a table match'); eq(e.diag, want, msg); return e; };
+// iPhones (Safari reports CSS pixels; device pixels are 3x).
+main(390, 844, 3, 'ios', true, 6.1, 'iPhone 1170 x 2532');
+main(393, 852, 3, 'ios', true, 6.1, 'iPhone 15 1179 x 2556');
+main(430, 932, 3, 'ios', true, 6.7, 'iPhone 15 Plus 1290 x 2796');
+main(440, 956, 3, 'ios', true, 6.9, 'iPhone 16 Pro Max');
+main(375, 667, 2, 'ios', true, 4.7, 'iPhone SE 750 x 1334');
+main(414, 896, 2, 'ios', true, 6.1, 'iPhone XR / 11');
+eq(est(390, 844, 3, 'ios', true).alts, [], 'iPhone 6.1 has no alternatives');
+// Android phones: odd pixel ratios round to the panel.
+let e = main(412, 915, 2.625, 'android', true, 6.5, 'Pixel-style 1080 x 2400');
+eq(e.alts, [6.1, 6.7], 'Android 1080 x 2400 alternatives');
+main(360, 800, 3, 'android', true, 6.5, 'Android 1080 x 2400 at 3x');
+main(384, 854, 2.8125, 'android', true, 6.5, 'Android 1080 x 2402 rounds to the 1080 x 2400 panel');
+main(360, 780, 3, 'android', true, 6.1, 'Android 1080 x 2340');
+main(412, 892, 3.5, 'android', true, 6.8, 'Galaxy Ultra 1440 x 3120-ish');
+// iPad and Android tablets.
+main(820, 1180, 2, 'ios', true, 10.9, 'iPad Air 1640 x 2360');
+main(1024, 1366, 2, 'ios', true, 12.9, 'iPad Pro 2048 x 2732');
+e = main(768, 1024, 2, 'ios', true, 9.7, 'iPad 1536 x 2048');
+eq(e.alts, [7.9], 'iPad 2048 x 1536 could be an iPad mini');
+eq(est(1280, 800, 2, 'android', true).cls, 'tablet', 'wide touch screen is a tablet');
+// Macs: the default scaled mode draws 2x the looks-like size.
+e = main(1440, 900, 2, 'mac', false, 13.3, 'MacBook 1440 x 900 at 2x');
+eq(e.alts, [15.4], 'MacBook 2880 x 1800 could be a 15 inch');
+main(1280, 800, 2, 'mac', false, 13.3, 'MacBook 2560 x 1600');
+main(1512, 982, 2, 'mac', false, 14.2, 'MacBook Pro 14');
+main(1728, 1117, 2, 'mac', false, 16.2, 'MacBook Pro 16');
+main(1470, 956, 2, 'mac', false, 13.6, 'MacBook Air 13.6');
+main(2560, 1440, 2, 'mac', false, 27, 'iMac 5K / Studio Display');
+// 1920 x 1080: a monitor at 100 percent, a laptop at 125 percent and up.
+e = main(1920, 1080, 1, 'pc', false, 24, '1080p at 100 percent is a monitor');
+eq(e.alts.slice(0, 2), [21.5, 27], '1080p monitor alternatives');
+assert.ok(e.alts.includes(15.6), '1080p monitor could be a 15.6 laptop');
+n++;
+e = main(1536, 864, 1.25, 'pc', false, 15.6, '1080p at 125 percent is a 15.6 laptop');
+assert.ok(e.alts.includes(14), '1080p laptop could be 14 in');
+n++;
+main(1280, 720, 1.5, 'pc', false, 14, '1080p at 150 percent is a 14 in laptop');
+// Other common Windows screens.
+main(1366, 768, 1, 'pc', false, 15.6, '1366 x 768 laptop');
+main(2560, 1440, 1, 'pc', false, 27, '1440p monitor');
+main(3440, 1440, 1, 'pc', false, 34, 'ultrawide');
+main(2560, 1440, 1.5, 'pc', false, 27, '4K monitor at 150 percent');
+main(1920, 1080, 1, 'mac', false, 24, 'external 1080p monitor on a Mac');
+// A phone Android resolution must never be read as an iPhone, and a Mac must never get a Windows laptop.
+assert.notEqual(est(360, 780, 3, 'android', true).diag, 5.4, 'Android 1080 x 2340 is not the iPhone mini');
+n++;
+// Zoom does not change the answer: Chrome at 125 percent shrinks the screen and grows the ratio.
+eq(est(1920 / 1.25, 1080 / 1.25, 1.25, 'pc').diag, 15.6, 'Chrome zoom 125 percent: same pixels, the ratio decides');
+// Rotation does not change the answer.
+eq(est(844, 390, 3, 'ios', true).diag, est(390, 844, 3, 'ios', true).diag, 'landscape iPhone');
+// No match: typical pixel density for the device class.
+e = est(450, 970, 3, 'unknown', true);
+eq(e.how, 'typical', 'unknown phone falls back');
+eq(e.cls, 'phone', 'fallback class phone');
+near(e.diag, Math.hypot(1350, 2910) / 420, 0.05, 'phone fallback uses 420 PPI');
+e = est(1500, 1000, 1, 'pc');
+eq(e.how, 'typical', 'unknown monitor falls back');
+near(e.diag, Math.hypot(1500, 1000) / 100, 0.25, 'monitor fallback uses 100 PPI');
+eq(e.diag % 0.5, 0, 'desktop fallback rounds to half an inch');
+e = est(1800, 1200, 2, 'unknown');
+eq(e.how, 'typical', 'unknown hi-dpi desktop falls back');
+near(e.diag, Math.hypot(3600, 2400) / 220, 0.25, 'hi-dpi fallback uses 220 PPI');
+// Bad input gives no estimate, never NaN.
+eq(estimateScreen({ sw: 0, sh: 0, dpr: 1 }), null, 'no screen, no estimate');
+eq(estimateScreen({ sw: NaN, sh: 800, dpr: 1 }), null, 'NaN screen');
+// Helpers.
+eq(altText([14]), '14 in', 'one alternative');
+eq(altText([14, 17.3]), '14 or 17.3 in', 'two alternatives');
+eq(altText([14, 17.3, 13.3]), '14, 17.3 or 13.3 in', 'three alternatives');
+eq(altText([]), '', 'no alternatives');
+eq(estimateAlts(est(1920, 1080, 1, 'pc')).startsWith('21.5'), true, 'alt words');
+const sd = sidesFromDiagonal(15.6, 1920, 1080);
+near(sd.wIn, 13.6, 0.01, 'estimated width of a 15.6 in 16:9');
+near(sd.hIn, 7.65, 0.01, 'estimated height of a 15.6 in 16:9');
+near(Math.hypot(sd.wIn, sd.hIn), 15.6, 1e-9, 'sides give back the diagonal');
+// Every table row is reachable by its own pixel count on its own platform and class, and never returns NaN.
+{
+  const { ESTIMATE_TABLE } = await import('../src/lib/estimate.js');
+  for (const [cls, rows] of Object.entries(ESTIMATE_TABLE)) {
+    for (const r of rows) {
+      assert.ok(r.diag > 0 && r.px[0] >= r.px[1] && r.px[1] > 0, `row sane: ${r.diag} ${r.px}`);
+      const os = r.os || 'unknown';
+      const dprTry = r.dpr ? (r.dpr[0] + r.dpr[1]) / 2 : cls === 'phone' ? 3 : cls === 'tablet' ? Math.min(2, r.px[1] / 620) : 1;
+      const got = estimateScreen({ sw: r.px[0] / dprTry, sh: r.px[1] / dprTry, dpr: dprTry, os, mobile: cls !== 'desktop' });
+      assert.ok(got && got.how === 'match' && (got.diag === r.diag || got.alts.includes(r.diag)), `row found: ${cls} ${r.diag} ${r.px} gave ${got && got.diag}`);
+      n++;
+    }
+  }
+}
 
 console.log(`ok: ${n} checks passed`);

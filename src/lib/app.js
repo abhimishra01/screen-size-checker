@@ -4,12 +4,11 @@ import {
   CARD, STORE_KEY, devPxPerMmFromObject, estimateCssPxPerMm, screenSignature,
   loadStore, saveStore, pickProfile, withProfile, withoutProfile,
 } from './calibration.js';
-import { report, measureState, chipFor, summaryText, one, fix } from './screen.js';
+import { report, measureState, chipFor, summaryText, estimateAlts, one, fix } from './screen.js';
 
 const $ = (id) => document.getElementById(id);
 function safeStorage() { try { return window.localStorage; } catch { return null; } }
 const blockedStore = { getItem() { throw new Error('no storage'); }, setItem() { throw new Error('no storage'); } };
-const NEEDS = 'Needs a card match';
 const NARROW = '(max-width: 700px), (pointer: coarse) and (max-width: 1100px)';
 const times = (a, b) => `${a} × ${b}`;
 
@@ -33,6 +32,21 @@ export function initChecker() {
     const type = (window.screen.orientation && window.screen.orientation.type) || '';
     return type.startsWith('landscape') && window.screen.width < window.screen.height;
   };
+  // Which kind of device this is, for the estimate. A touch Mac is an iPad.
+  function deviceInfo() {
+    const ua = navigator.userAgent || '';
+    const plat = `${(navigator.userAgentData && navigator.userAgentData.platform) || ''} ${navigator.platform || ''}`;
+    const touch = (navigator.maxTouchPoints || 0) > 1;
+    let os = 'unknown';
+    if (/iPhone|iPad|iPod/.test(ua) || (/Mac/.test(plat) && touch)) os = 'ios';
+    else if (/Android/.test(ua)) os = 'android';
+    else if (/Mac/.test(plat)) os = 'mac';
+    else if (/Win|Linux|CrOS|X11/.test(plat + ua)) os = 'pc';
+    const touchOnly = matchMedia('(pointer: coarse)').matches && matchMedia('(hover: none)').matches;
+    const mobile = os === 'ios' || os === 'android' || touchOnly;
+    if (mobile && os !== 'ios' && os !== 'android') os = 'mobile';
+    return { os, mobile };
+  }
   const env = () => {
     const t = turned();
     const s = window.screen;
@@ -40,7 +54,7 @@ export function initChecker() {
       sw: t ? s.height : s.width, sh: t ? s.width : s.height,
       aw: t ? s.availHeight : s.availWidth, ah: t ? s.availWidth : s.availHeight,
       ow: window.outerWidth, oh: window.outerHeight,
-      iw: window.innerWidth, ih: window.innerHeight, dpr: dpr(),
+      iw: window.innerWidth, ih: window.innerHeight, dpr: dpr(), ...deviceInfo(),
     };
   };
   function resolve() {
@@ -68,6 +82,9 @@ export function initChecker() {
     }
     for (const el of document.querySelectorAll('[data-cal-btn-text]')) el.textContent = measured ? 'Measure again' : 'Measure with a card';
 
+    const est = r.est;
+    const altWords = estimateAlts(est);
+    const alt = $('r-alt');
     if (measured) {
       const p = r.phys;
       set('r-diag', `${one(p.diagIn)} in`);
@@ -78,31 +95,57 @@ export function initChecker() {
       set('r-note', r.closest
         ? `Closest common size: ${r.closest.diag} in (${r.closest.note.toLowerCase()}). Sizes on the box are rounded, so a small gap is normal. ${how}`
         : `This is not close to a size in our list. Some screens are less common, so this can be right. If it looks wrong, match the card again or measure with a tape. ${how}`);
+      alt.hidden = true;
+      set('r-alt', '');
+    } else if (est) {
+      const p = r.estPhys;
+      set('r-diag', `${est.diag} in`);
+      set('r-diag-cm', `${one(p.diagMm / 10)} cm diagonal`);
+      set('r-alt', altWords ? `Could also be ${altWords}.` : '');
+      alt.hidden = !altWords;
+      set('r-wh', `About ${one(p.wIn)} × ${one(p.hIn)} in wide and high (${one(p.wMm / 10)} × ${one(p.hMm / 10)} cm).`);
+      set('r-note', est.how === 'match'
+        ? `Estimated by matching your screen, ${times(r.device.w, r.device.h)} pixels, to common ${est.kind}. It is a best guess, not a measurement.`
+        : `Estimated from your ${times(r.device.w, r.device.h)} pixels and the usual pixel density of ${est.kind} (about ${est.typicalPpi} PPI). No device in our list matches, so it can be off by 10 to 20 percent.`);
     } else {
-      set('r-diag', state.kind === 'other' ? 'Not measured on this screen' : 'Not measured yet');
+      set('r-diag', 'Unknown');
       set('r-diag-cm', '');
-      set('r-wh', state.kind === 'other'
-        ? 'Your saved card match is for a different screen. Each screen needs its own match.'
-        : state.kind === 'typed'
-          ? 'In the online ruler you set this screen from a size you typed or a device you picked. That is not a measurement, so it is not shown here.'
-          : 'Browsers report pixels, not inches. Any site that prints inches without a card match is guessing.');
-      set('r-note', 'Press Measure with a card, hold a bank card flat on the screen, and drag the outline to fit. It takes about 20 seconds.');
+      set('r-alt', '');
+      alt.hidden = true;
+      set('r-wh', 'This browser does not report a screen size, so there is nothing to estimate.');
+      set('r-note', 'Measure with a card to get the size.');
     }
 
+    // The side card: the way to get the exact size. After a match it also shows the estimate for comparison.
+    const estLine = est ? `${est.diag} in${altWords ? ` (could also be ${altWords})` : ''}` : '';
+    $('exact-h').textContent = measured ? 'Measured with a card' : 'Want it exact? Measure with a card';
+    set('ex-text', measured
+      ? 'This is the size you matched with a card. Match again if you changed the screen, the display scaling or the zoom.'
+      : 'The estimate comes from your pixels, so it can be off. Hold a bank card flat on the screen and match its outline. This gives the true size in about 20 seconds.');
+    const exEst = $('ex-est');
+    exEst.hidden = !(measured && est);
+    set('ex-est', measured && est ? `Estimate from pixels: ${estLine}.` : '');
+    const warn = $('ex-warn');
+    const warnText = state.kind === 'other' ? 'Your saved card match is for a different screen, so it is not used here.'
+      : state.kind === 'typed' ? 'In the online ruler you set this screen from a size you typed or a device you picked. That is not a measurement, so it is not used here.' : '';
+    warn.hidden = !warnText;
+    set('ex-warn', warnText);
+
+    const about = (v) => (est ? `About ${v}` : 'Unknown');
     set('f-res', `${times(r.device.w, r.device.h)}`);
     set('f-scr', times(r.screen.w, r.screen.h));
     set('f-dpr', fix(r.dpr, 3));
     set('f-asp', r.aspect.text);
-    set('f-ppi', measured ? `${Math.round(r.ppi)} PPI` : NEEDS);
+    set('f-ppi', measured ? `${Math.round(r.ppi)} PPI` : about(`${Math.round(r.estPpi)} PPI`));
     set('f-vp', times(r.viewport.w, r.viewport.h));
-    set('f-vpin', measured ? `${one(r.viewPhys.wIn)} × ${one(r.viewPhys.hIn)} in` : NEEDS);
+    set('f-vpin', measured ? `${one(r.viewPhys.wIn)} × ${one(r.viewPhys.hIn)} in` : about(est ? `${one(r.estViewPhys.wIn)} × ${one(r.estViewPhys.hIn)} in` : ''));
     set('f-avl', times(r.avail.w, r.avail.h));
     set('f-win', times(r.window.w, r.window.h));
-    set('f-cpi', measured ? fix(r.cssPerIn, 1) : NEEDS);
+    set('f-cpi', measured ? fix(r.cssPerIn, 1) : about(est ? fix(r.estCssPerIn, 0) : ''));
     set('f-col', `${window.screen.colorDepth}-bit`);
     set('f-ori', orientationText());
     drawShape(r);
-    markTable(measured ? r.closest : null);
+    markTable(measured ? r.closest : r.estClosest, measured);
     root.dataset.ready = 'true';
   }
   // Drawing of the screen's shape. Only the proportions are real; it is not drawn at true size.
@@ -118,14 +161,14 @@ export function initChecker() {
     line.setAttribute('x2', (x + w).toFixed(1)); line.setAttribute('y2', y.toFixed(1));
     set('shape-c', r.phys
       ? `Shape of your screen. Diagonal ${one(r.phys.diagIn)} in.`
-      : `Shape of your screen: ${r.aspect.text}. Size not measured.`);
+      : r.est ? `Shape of your screen. Diagonal about ${r.est.diag} in.` : `Shape of your screen: ${r.aspect.text}.`);
   }
-  function markTable(closest) {
+  function markTable(closest, measured) {
     for (const row of document.querySelectorAll('[data-size]')) {
       const mine = !!closest && row.dataset.size === closest.id;
       if (mine) row.dataset.yours = '1'; else delete row.dataset.yours;
       const tag = row.querySelector('.yours');
-      if (tag) tag.textContent = mine ? 'Closest to yours' : '';
+      if (tag) tag.textContent = mine ? (measured ? 'Closest to yours' : 'Likely yours') : '';
     }
   }
 

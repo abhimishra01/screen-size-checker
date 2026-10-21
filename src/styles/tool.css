@@ -35,27 +35,42 @@
 .result {
   background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px 16px;
   box-shadow: 0 1px 2px rgb(16 24 40 / .05), 0 10px 30px -18px rgb(16 24 40 / .25);
-  min-height: 290px; display: flex; flex-direction: column;
+  min-height: 290px; display: flex; flex-direction: column; container-type: inline-size;
 }
 :root[data-theme="dark"] .result { box-shadow: none; }
 .r-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .r-label { flex: 1; font-size: 0.875rem; font-weight: 650; color: var(--muted); }
-@media (max-width: 519px) { .r-measure { order: 3; width: 100%; } }
 .r-main { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: center; margin-top: 12px; }
 .r-shape { margin: 0; width: 240px; text-align: center; }
 .r-shape svg { display: block; width: 240px; height: 160px; }
 #shape-r { fill: var(--brand-soft); stroke: var(--ink); stroke-width: 3; }
 #shape-d { stroke: var(--brand-ink); stroke-width: 2; stroke-dasharray: 6 5; }
 .r-shape figcaption { margin-top: 4px; }
-@media (max-width: 759px) { .r-main { grid-template-columns: minmax(0, 1fr); } .r-shape { display: none; } }
+/* The drawing needs room. Hide it when the result card is narrow (next to the side card, or on a phone). */
+@container (max-width: 640px) { .r-main { grid-template-columns: minmax(0, 1fr); } .r-shape { display: none; } }
 .r-big { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; font-weight: 750; letter-spacing: -0.03em; line-height: 1.05; font-variant-numeric: tabular-nums; }
 #r-diag { font-size: clamp(2.5rem, 9vw, 4.5rem); color: var(--ink); }
-.result:not([data-state="measured"]) #r-diag { font-size: clamp(1.75rem, 6vw, 2.75rem); color: var(--muted); }
 .r-cm { font-size: clamp(1.125rem, 3.5vw, 1.5rem); font-weight: 650; color: var(--brand-ink); letter-spacing: -0.01em; }
 .r-wh { margin-top: 10px; font-size: 1.0625rem; font-weight: 600; max-width: 60ch; }
 .result:not([data-state="measured"]) .r-wh { font-weight: 500; }
+.r-alt { margin-top: 8px; font-size: 1.0625rem; font-weight: 600; color: var(--brand-ink); }
+.r-alt[hidden] { display: none; }
 .r-note { margin-top: 6px; color: var(--muted); max-width: 70ch; }
 .r-actions { margin-top: auto; padding-top: 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+
+/* Result card and the "measure with a card" side card. Side by side on wide screens, stacked on phones. */
+.top-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: stretch; }
+@media (max-width: 859px) { .top-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; } .result { min-height: 0; } }
+.exact { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px 18px; }
+.exact-h { font-size: 1.125rem; font-weight: 750; letter-spacing: -0.01em; line-height: 1.25; }
+.exact-p { color: var(--ink); font-size: 0.9375rem; line-height: 1.5; }
+.exact-est { font-size: 0.9375rem; font-weight: 600; line-height: 1.45; }
+.exact-warn { font-size: 0.875rem; font-weight: 600; color: #b45309; line-height: 1.45; }
+:root[data-theme="dark"] .exact-warn { color: #fbbf24; }
+.exact p[hidden] { display: none; }
+.exact-btn { width: 100%; margin-top: 2px; }
+.exact-foot { margin-top: auto; }
+.exact-foot a { color: var(--brand-ink); text-decoration: underline; text-underline-offset: 3px; }
 
 /* Facts grid */
 .facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }

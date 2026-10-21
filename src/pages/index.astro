@@ -9,7 +9,7 @@ import { SIZE_GROUPS } from '../lib/sizes.js';
 import { panelFromDiagonal } from '../lib/calibration.js';
 import { aspect } from '../lib/screen.js';
 
-const title = 'Screen Size Checker: Measure Your Screen in Inches';
+const title = 'What Is My Screen Size? Free Screen Size Checker';
 const here = `${site.origin}/`;
 const jsonLd = [
   {
@@ -42,24 +42,28 @@ const groups = SIZE_GROUPS.map((g) => ({
   <AdSlot />
   <article class="mx-auto max-w-5xl px-4 pt-14">
     <div class="prose-site">
-      <h2>How to check your screen size with a card</h2>
+      <h2>What the checker shows when the page loads</h2>
+      <p>The big number at the top is your screen diagonal in inches and cm. It is an estimate, and the page says so. The checker reads how many pixels your screen has and how many of them the browser packs into one CSS pixel. Then it looks for that pixel count in a built-in list of common iPhones, iPads, Android phones, MacBooks, Windows laptops and monitors.</p>
+      <p>Some pixel counts fit more than one size. A 1920 by 1080 screen can be a 24 inch monitor or a 15.6 inch laptop. The checker uses your pixel ratio and device type to pick the likelier one, and lists the others as "could also be". If your screen is not in the list, it uses the usual pixel density for that kind of device. It then tells you the guess is rough.</p>
+
+      <h2>How to get the exact size with a card</h2>
       <ol>
-        <li>Press <strong>Measure with a card</strong> on the result card, or <strong>Measure</strong> at the top of the page on a wide screen.</li>
+        <li>Press <strong>Measure with a card</strong> in the box next to the result (below it on a phone), or <strong>Measure</strong> at the top of the page on a wide screen.</li>
         <li>Hold a bank card flat against the screen, on the outline.</li>
         <li>Line up the left edges. Drag the grip until the right edge of the outline meets the right edge of the card. Use the 0.1 mm buttons for the last bit.</li>
-        <li>Press <strong>My card matches</strong>. The checker shows the diagonal, width, height and pixel density of your screen.</li>
+        <li>Press <strong>My card matches</strong>. The big number now says <strong>Measured</strong>, and the estimate moves to the side box.</li>
       </ol>
-      <p>The match is saved in this browser for this screen. Come back later and the size is there. Plug in another monitor and it asks for a new match, because each screen has its own pixel size.</p>
+      <p>The match is saved in this browser for this screen. Come back later and the measured size is there. Plug in another monitor and it shows a new estimate, because each screen has its own pixel size. The page never opens the card match by itself.</p>
 
-      <h2>Why other screen size checkers guess</h2>
-      <p>A web page can read how many pixels your screen has. It cannot read how wide a pixel is. A 1920 by 1080 screen can be a 13 inch laptop or a 27 inch monitor. So a site that shows inches the moment it loads has to guess, from the resolution or a list of devices. We tried one such site on a laptop. It said 13.4 inches on its home page and 15.7 inches on another page for the same screen.</p>
+      <h2>Why an estimate can be wrong</h2>
+      <p>A web page can read how many pixels your screen has. It cannot read how wide a pixel is. A 1920 by 1080 screen can be a 13 inch laptop or a 27 inch monitor. So any site that shows inches the moment it loads has to guess, from the resolution or a list of devices. Two such sites can give two different answers for the same screen.</p>
       <p>A card fixes this. Every bank card is 85.6 mm wide. When the outline matches the card, the page knows how many pixels make a millimeter on your screen. Then the size is simple math: the pixels across divided by pixels per millimeter gives the width, and the same for the height. The diagonal comes from the width and height.</p>
 
       <h2>Worked example: a 15.6 inch laptop</h2>
       <p>A common laptop has a 1920 by 1080 screen. After a card match the checker finds about 5.56 pixels per millimeter. The width is 1920 / 5.56 = 345 mm (13.6 in). The height is 1080 / 5.56 = 194 mm (7.65 in). The diagonal is the square root of 13.6&sup2; + 7.65&sup2;, which is 15.6 inches. The pixel density is 141 pixels per inch.</p>
 
       <h2>Common screen sizes</h2>
-      <p>Sides are for the visible picture, long side first. Your screen is marked after you measure it.</p>
+      <p>Sides are for the visible picture, long side first. Your screen is marked too: "Likely yours" for the estimate, "Closest to yours" after a card match.</p>
     </div>
     <div class="tbl-wrap sizes mt-2 max-w-4xl" tabindex="0" role="region" aria-label="Common screen sizes table">
       <table class="tbl">
@@ -97,7 +101,7 @@ const groups = SIZE_GROUPS.map((g) => ({
       <h2>Screen size, resolution and PPI</h2>
       <p><strong>Screen size</strong> is the physical diagonal. <strong>Resolution</strong> is the pixel count, such as 2560 by 1440. <strong>Pixel density</strong> (PPI) is how many pixels fit in one inch. A 27 inch 1440p monitor has about 109 PPI. A 27 inch 4K monitor has about 163 PPI, so text looks sharper at the same size.</p>
       <p>Phones and Macs draw more pixels than the page sees. A pixel ratio of 2 means each CSS pixel uses 2 by 2 device pixels. Windows display scaling of 125 or 150 percent does the same. The checker shows both numbers. If your system scales the display to a "looks like" size, the pixel density it shows is for the pixels your computer draws, which can differ from the panel's own count.</p>
-      <p>Already matched a card in our <a href="https://bingemind.com/online-ruler/">online ruler</a>? This checker reads the same saved match, so your size shows at once.</p>
+      <p>Already matched a card in our <a href="https://bingemind.com/online-ruler/">online ruler</a>? This checker reads the same saved match, so your measured size shows at once.</p>
     </div>
   </article>
   <Faq items={faq} />

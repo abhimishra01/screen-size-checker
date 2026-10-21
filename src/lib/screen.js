@@ -3,6 +3,7 @@
 // (device pixels per millimeter, shared with the online ruler).
 import { MM_PER_IN } from './units.js';
 import { ALL_SIZES } from './sizes.js';
+import { estimateScreen, sidesFromDiagonal, altText } from './estimate.js';
 
 /** Physical size of a pixel area. w and h are CSS pixels; dpr turns them into device pixels. */
 export function physicalSize(w, h, dpr, devPxPerMm) {
@@ -99,20 +100,22 @@ export function measureState(pick) {
   return { kind: 'typed', profile: p };
 }
 
-/** Plain words for the status chip. */
+/**
+ * Plain words for the status chip. Without a card match the page still shows an estimate, so the chip says Estimated.
+ * profile is only used when kind is measured.
+ */
 export function chipFor(kind, profile) {
   if (kind === 'measured') {
     const what = { card: 'card', coin: 'coin', paper: 'paper' }[profile.method] || 'object';
     return { kind: 'calibrated', short: 'Measured', text: `Measured with a ${what} on this screen` };
   }
-  if (kind === 'typed') return { kind: 'device', short: 'Not measured', text: 'Set from a size you picked in the ruler, not measured' };
-  if (kind === 'other') return { kind: 'estimate', short: 'Not measured', text: 'Your saved calibration is for another screen' };
-  return { kind: 'estimate', short: 'Not measured', text: 'Not measured yet' };
+  return { kind: 'estimate', short: 'Estimated', text: 'Estimated from your screen pixels. Measure with a card for the exact size.' };
 }
 
 /** Everything the page shows, from what the browser reports. All sizes in CSS pixels unless named. */
 export function report(env, devPxPerMm) {
   const { sw, sh, aw, ah, ow, oh, iw, ih, dpr } = env;
+  const est = estimateScreen({ sw, sh, dpr, os: env.os, mobile: env.mobile });
   const out = {
     screen: { w: sw, h: sh },
     avail: { w: aw, h: ah },
@@ -126,7 +129,21 @@ export function report(env, devPxPerMm) {
     ppi: null,
     cssPerIn: null,
     closest: null,
+    est: null, // the instant estimate, always there when the browser reports a screen size
+    estPhys: null,
+    estViewPhys: null,
+    estPpi: null,
+    estCssPerIn: null,
+    estClosest: null,
   };
+  if (est) {
+    out.est = est;
+    out.estPhys = sidesFromDiagonal(est.diag, sw, sh);
+    out.estViewPhys = { wIn: iw * out.estPhys.wIn / sw, hIn: ih * out.estPhys.hIn / sh };
+    out.estPpi = est.ppi;
+    out.estCssPerIn = Math.hypot(sw, sh) / est.diag;
+    out.estClosest = closestSize(est.diag);
+  }
   if (devPxPerMm > 0) {
     out.phys = physicalSize(sw, sh, dpr, devPxPerMm);
     out.viewPhys = physicalSize(iw, ih, dpr, devPxPerMm);
@@ -137,15 +154,24 @@ export function report(env, devPxPerMm) {
   return out;
 }
 
+/** The "could also be" words for an estimate, or an empty string. */
+export const estimateAlts = (est) => (est && est.alts.length ? altText(est.alts) : '');
+
 /** Plain text for the Copy button. */
 export function summaryText(r, status) {
   const lines = [];
   if (r.phys) {
-    lines.push(`Screen size: ${one(r.phys.diagIn)} in (${one(r.phys.diagMm / 10)} cm) diagonal`);
+    lines.push(`Screen size: ${one(r.phys.diagIn)} in (${one(r.phys.diagMm / 10)} cm) diagonal, measured with a card`);
     lines.push(`Width x height: ${one(r.phys.wIn)} x ${one(r.phys.hIn)} in (${one(r.phys.wMm / 10)} x ${one(r.phys.hMm / 10)} cm)`);
     lines.push(`Pixel density: ${Math.round(r.ppi)} rendered pixels per inch`);
+    if (r.est) lines.push(`Estimate from pixels: ${r.est.diag} in${r.est.alts.length ? ` (could also be ${estimateAlts(r.est)})` : ''}`);
+  } else if (r.est) {
+    const p = r.estPhys;
+    lines.push(`Screen size: about ${r.est.diag} in (${one(p.diagMm / 10)} cm) diagonal, estimated${r.est.alts.length ? `, could also be ${estimateAlts(r.est)}` : ''}`);
+    lines.push(`Width x height: about ${one(p.wIn)} x ${one(p.hIn)} in (${one(p.wMm / 10)} x ${one(p.hMm / 10)} cm)`);
+    lines.push(`Pixel density: about ${Math.round(r.estPpi)} rendered pixels per inch`);
   } else {
-    lines.push('Screen size: not measured (match a bank card on the page to measure it)');
+    lines.push('Screen size: unknown (this browser does not report a screen size)');
   }
   lines.push(`Resolution: ${r.device.w} x ${r.device.h} device pixels`);
   lines.push(`Screen: ${r.screen.w} x ${r.screen.h} CSS pixels, pixel ratio ${fix(r.dpr, 3)}`);

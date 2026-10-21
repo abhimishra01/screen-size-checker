@@ -6,9 +6,9 @@ const cfg = {
   cloudflareProject: 'screen-size-checker',    // Cloudflare Pages project name (used by npm run deploy)
   keyword: 'screen size checker',              // main keyword: goes in the H1 and title
   keywords: ['what is my screen size', 'what size is my monitor', 'what size is my laptop screen', 'measure screen size online', 'screen size in inches', 'monitor size checker'],
-  tagline: 'Measured with a card, not guessed', // short line shown in the page
+  tagline: 'Instant estimate, exact with a card', // short line shown in the page
   description:
-    'Find your real screen size in inches and cm. Hold a bank card to the screen once to measure it, then see width, height, PPI and resolution. Free.',
+    'See your screen size in inches and cm the moment the page loads. It is an estimate from your pixels. Match a bank card for the exact size. Free.',
   ga4: '',                              // GA4 measurement ID. Empty = Google Analytics off
   adsense: '',                          // AdSense publisher ID. Empty = ads off
   brand: '#047857',                     // brand color (emerald; no other tool uses this hue)

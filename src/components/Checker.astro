@@ -19,20 +19,21 @@ const facts = [
 ---
 <section id="tool" class="tool mx-auto max-w-5xl px-4 pt-6 sm:pt-10" aria-labelledby="h1" data-ready="false">
   <h1 id="h1" class="text-2xl font-bold tracking-tight sm:text-4xl">Screen size checker</h1>
-  <p class="mt-2 max-w-2xl text-muted sm:text-lg">Your real screen size in inches and cm. A browser only knows pixels, so you match a bank card to the screen once and the page measures it.</p>
+  <p class="mt-2 max-w-2xl text-muted sm:text-lg">Your screen size in inches and cm, at once. It is an estimate from your screen's pixels. For the exact size, match a bank card to the screen.</p>
 
-  <div class="result mt-5" data-state="none">
+  <div class="top-grid mt-5">
+  <div class="result" data-state="none">
     <div class="r-top">
-      <p class="r-label">Your screen</p>
-      <span class="chip chip-static" data-cal-chip data-kind="estimate"><span class="dot" aria-hidden="true"></span><span data-cal-chip-text>Not measured</span></span>
-      <button type="button" class="btn primary r-measure" data-cal-open aria-haspopup="dialog"><span data-cal-btn-text>Measure with a card</span></button>
+      <p class="r-label">Your screen size</p>
+      <span class="chip chip-static" data-cal-chip data-kind="estimate"><span class="dot" aria-hidden="true"></span><span data-cal-chip-text>Estimated</span></span>
     </div>
 
     <div class="r-main">
     <div class="r-body">
-      <p class="r-big"><span id="r-diag">Not measured yet</span><span id="r-diag-cm" class="r-cm"></span></p>
-      <p id="r-wh" class="r-wh">Browsers report pixels, not inches. Any site that prints inches without a card match is guessing.</p>
-      <p id="r-note" class="r-note">Press <strong>Measure with a card</strong>, hold a bank card flat on the screen, and drag the outline to fit. It takes about 20 seconds.</p>
+      <p class="r-big"><span id="r-diag">&nbsp;</span><span id="r-diag-cm" class="r-cm"></span></p>
+      <p id="r-alt" class="r-alt" hidden></p>
+      <p id="r-wh" class="r-wh"></p>
+      <p id="r-note" class="r-note"></p>
     </div>
     <figure class="r-shape">
       <svg id="shape" viewBox="0 0 240 160" width="240" height="160" aria-hidden="true" focusable="false">
@@ -49,12 +50,22 @@ const facts = [
     </div>
   </div>
 
+  <aside class="exact" aria-labelledby="exact-h">
+    <h2 id="exact-h" class="exact-h">Want it exact? Measure with a card</h2>
+    <p id="ex-text" class="exact-p">The estimate comes from your pixels, so it can be off. Hold a bank card flat on the screen and match its outline. This gives the true size in about 20 seconds.</p>
+    <p id="ex-est" class="exact-est" hidden></p>
+    <p id="ex-warn" class="exact-warn" hidden></p>
+    <button type="button" class="btn primary exact-btn" data-cal-open aria-haspopup="dialog"><span data-cal-btn-text>Measure with a card</span></button>
+    <p class="small exact-foot">Saved only in this browser. The <a href="https://bingemind.com/online-ruler/">online ruler</a> reads the same match.</p>
+  </aside>
+  </div>
+
   <dl class="facts mt-4" aria-label="What your browser reports">
     {facts.map(([id, k, hint]) => (
       <div class="fact"><dt>{k}<span class="f-hint">{hint}</span></dt><dd id={'f-' + id}>&nbsp;</dd></div>
     ))}
   </dl>
-  <p class="mt-3 max-w-3xl text-sm text-muted"><strong class="text-ink">Screen</strong> is the whole display. <strong class="text-ink">Viewport</strong> is the part of the browser window that shows the page. <span id="ppi-note">Pixel density counts the pixels your computer draws. If your system scales the display, the panel's own pixel count can differ, and a browser cannot see it.</span></p>
+  <p class="mt-3 max-w-3xl text-sm text-muted"><strong class="text-ink">Screen</strong> is the whole display. <strong class="text-ink">Viewport</strong> is the part of the browser window that shows the page. <span id="ppi-note">Values marked "about" come from the estimate. Pixel density counts the pixels your computer draws. If your system scales the display, the panel's own pixel count can differ, and a browser cannot see it.</span></p>
   <noscript><p class="mt-3 font-semibold">The checker needs JavaScript to read your screen. Turn it on to measure.</p></noscript>
 </section>
 
