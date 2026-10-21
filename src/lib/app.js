@@ -150,7 +150,8 @@ export function initChecker() {
   });
 
   // ---------- card match
-  const cal = { rotated: false, cssW: 300 };
+  // per = CSS px per mm the user has set. It survives Turn card even when the outline must be cut to fit.
+  const cal = { rotated: false, cssW: 300, per: 4 };
   const isPhone = () => window.innerWidth <= 700;
   const spec = () => (cal.rotated ? { wMm: CARD.h, hMm: CARD.w } : { wMm: CARD.w, hMm: CARD.h });
   function startCssPerMm() {
@@ -162,7 +163,7 @@ export function initChecker() {
 
   function placeObject() {
     const s = spec();
-    const left = isPhone() ? Math.max(16, (window.innerWidth - cal.cssW) / 2 - 12) : Math.max(24, (roomW() - cal.cssW) / 2);
+    const left = isPhone() ? Math.max(4, Math.min((window.innerWidth - cal.cssW) / 2 - 12, window.innerWidth - cal.cssW - 12)) : Math.max(24, (roomW() - cal.cssW) / 2);
     const top = isPhone() ? 40 : 110;
     objEl.style.left = `${Math.round(left)}px`;
     objEl.style.top = `${top}px`;
@@ -185,15 +186,17 @@ export function initChecker() {
     handle.setAttribute('aria-valuetext', `${fix(cal.cssW, 0)} pixels wide for ${s.wMm} millimeters`);
     $('obj-l').textContent = `Bank card: ${s.wMm} mm`;
   }
-  const clampW = (w) => Math.max(40, Math.min(w, window.innerWidth - (isPhone() ? 48 : 40)));
+  const clampW = (w) => Math.max(40, Math.min(w, window.innerWidth - (isPhone() ? 16 : 40)));
+  const setW = (w) => { cal.cssW = clampW(w); cal.per = cal.cssW / spec().wMm; };
   function nudge(dMm) {
-    cal.cssW = clampW(cal.cssW + dMm * (cal.cssW / spec().wMm));
+    setW(cal.cssW + dMm * (cal.cssW / spec().wMm));
     sizeObject();
   }
   function startObject() {
     const per = startCssPerMm();
     cal.rotated = CARD.w * per > roomW() - 40;
     $('rot-note').hidden = !cal.rotated;
+    cal.per = per;
     cal.cssW = clampW(spec().wMm * per);
     placeObject();
   }
@@ -213,9 +216,9 @@ export function initChecker() {
   for (const b of document.querySelectorAll('[data-cal-open]')) b.addEventListener('click', openCal);
   $('cal-close').addEventListener('click', closeCal);
   $('rotate').addEventListener('click', () => {
-    const per = cal.cssW / spec().wMm;
     cal.rotated = !cal.rotated;
-    cal.cssW = clampW(spec().wMm * per);
+    $('rot-note').hidden = !cal.rotated;
+    cal.cssW = clampW(spec().wMm * cal.per);
     placeObject();
   });
   for (const b of dlg.querySelectorAll('[data-nudge]')) b.addEventListener('click', () => nudge(Number(b.dataset.nudge)));
@@ -262,13 +265,15 @@ export function initChecker() {
   handle.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    drag = { mode: 'size', id: e.pointerId, left: objEl.getBoundingClientRect().left };
+    const left = objEl.getBoundingClientRect().left;
+    // Keep the grab point under the finger: no jump when the drag starts.
+    drag = { mode: 'size', id: e.pointerId, left, offset: cal.cssW - (e.clientX - left) };
     handle.focus({ preventScroll: true });
   });
   window.addEventListener('pointermove', (e) => {
     if (!drag) return;
     if (drag.mode === 'size' && e.pointerId === drag.id) {
-      cal.cssW = clampW(e.clientX - drag.left);
+      setW(e.clientX - drag.left + drag.offset);
       sizeObject();
     } else if (pts.has(e.pointerId)) {
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -278,7 +283,7 @@ export function initChecker() {
         sizeObject();
       } else if (drag.mode === 'pinch' && pts.size === 2) {
         const [a, b] = [...pts.values()];
-        cal.cssW = clampW((drag.w * Math.hypot(a.x - b.x, a.y - b.y)) / drag.d);
+        setW((drag.w * Math.hypot(a.x - b.x, a.y - b.y)) / drag.d);
         sizeObject();
       }
     }
