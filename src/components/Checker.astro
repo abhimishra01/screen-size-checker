@@ -24,16 +24,23 @@ const facts = [
   <div class="result mt-5" data-state="none">
     <div class="r-top">
       <p class="r-label">Your screen</p>
-      <div class="r-corner">
-        <span class="chip chip-static" data-cal-chip data-kind="estimate" role="status"><span class="dot" aria-hidden="true"></span><span data-cal-chip-text>Not measured</span></span>
-        <button type="button" class="btn primary" data-cal-open aria-haspopup="dialog"><span data-cal-btn-text>Measure with a card</span></button>
-      </div>
+      <span class="chip chip-static" data-cal-chip data-kind="estimate"><span class="dot" aria-hidden="true"></span><span data-cal-chip-text>Not measured</span></span>
+      <button type="button" class="btn primary r-measure" data-cal-open aria-haspopup="dialog"><span data-cal-btn-text>Measure with a card</span></button>
     </div>
 
+    <div class="r-main">
     <div class="r-body">
       <p class="r-big"><span id="r-diag">Not measured yet</span><span id="r-diag-cm" class="r-cm"></span></p>
       <p id="r-wh" class="r-wh">Browsers report pixels, not inches. Any site that prints inches without a card match is guessing.</p>
       <p id="r-note" class="r-note">Press <strong>Measure with a card</strong>, hold a bank card flat on the screen, and drag the outline to fit. It takes about 20 seconds.</p>
+    </div>
+    <figure class="r-shape">
+      <svg id="shape" viewBox="0 0 240 160" width="240" height="160" aria-hidden="true" focusable="false">
+        <rect id="shape-r" x="20" y="10" width="200" height="125" rx="6" />
+        <line id="shape-d" x1="20" y1="135" x2="220" y2="10" />
+      </svg>
+      <figcaption id="shape-c" class="small">Drawing of your screen's shape</figcaption>
+    </figure>
     </div>
 
     <div class="r-actions">

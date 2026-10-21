@@ -1,7 +1,7 @@
 // Browser side of the checker: reads the screen, keeps the result live, and runs the card match.
 // The maths lives in screen.js and calibration.js and is tested in Node.
 import {
-  CARD, devPxPerMmFromObject, estimateCssPxPerMm, screenSignature,
+  CARD, STORE_KEY, devPxPerMmFromObject, estimateCssPxPerMm, screenSignature,
   loadStore, saveStore, pickProfile, withProfile, withoutProfile,
 } from './calibration.js';
 import { report, measureState, chipFor, summaryText, one, fix } from './screen.js';
@@ -91,8 +91,24 @@ export function initChecker() {
     set('f-cpi', measured ? fix(r.cssPerIn, 1) : NEEDS);
     set('f-col', `${window.screen.colorDepth}-bit`);
     set('f-ori', orientationText());
+    drawShape(r);
     markTable(measured ? r.closest : null);
     root.dataset.ready = 'true';
+  }
+  // Drawing of the screen's shape. Only the proportions are real; it is not drawn at true size.
+  function drawShape(r) {
+    const W = 200, H = 140;
+    const k = Math.min(W / r.screen.w, H / r.screen.h);
+    const w = r.screen.w * k, h = r.screen.h * k;
+    const x = 20 + (W - w) / 2, y = 5 + (H - h) / 2;
+    const rect = $('shape-r'), line = $('shape-d');
+    rect.setAttribute('x', x.toFixed(1)); rect.setAttribute('y', y.toFixed(1));
+    rect.setAttribute('width', w.toFixed(1)); rect.setAttribute('height', h.toFixed(1));
+    line.setAttribute('x1', x.toFixed(1)); line.setAttribute('y1', (y + h).toFixed(1));
+    line.setAttribute('x2', (x + w).toFixed(1)); line.setAttribute('y2', y.toFixed(1));
+    set('shape-c', r.phys
+      ? `Shape of your screen. Diagonal ${one(r.phys.diagIn)} in.`
+      : `Shape of your screen: ${r.aspect.text}. Size not measured.`);
   }
   function markTable(closest) {
     for (const row of document.querySelectorAll('[data-size]')) {
@@ -291,7 +307,7 @@ export function initChecker() {
   }
   watchDpr();
   // Another tab (the online ruler) may save a match.
-  window.addEventListener('storage', (e) => { if (e.key === null || e.key === 'bm.calibration.v1') { store = loadStore(storage); update(); } });
+  window.addEventListener('storage', (e) => { if (e.key === null || e.key === STORE_KEY) { store = loadStore(storage); update(); } });
 
   resolve();
   render();
