@@ -68,6 +68,19 @@ for (const [w, h] of [[390, 664], [375, 667]]) {
   await ctx.close();
 }
 
+// 1d. iPhone Safari keeps screen.width in portrait after a turn. The page follows the real orientation.
+{
+  const ctx = await browser.newContext({ viewport: { width: 844, height: 390 }, screen: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+  await ctx.addInitScript(() => { Object.defineProperty(Screen.prototype, 'orientation', { get: () => ({ type: 'landscape-primary', addEventListener() {} }) }); });
+  const page = await ctx.newPage();
+  page.on('pageerror', (e) => errors.push(String(e)));
+  await page.goto(srv.url + entry);
+  await page.waitForSelector('#tool[data-ready="true"]');
+  ok((await text(page, '#f-scr')) === '844 × 390', 'turned phone: ' + await text(page, '#f-scr'));
+  ok((await text(page, '#f-asp')).startsWith('about 19.5:9'), 'turned phone aspect');
+  await ctx.close();
+}
+
 // 2. A size typed in the ruler is not a measurement.
 {
   const { ctx, page } = await open(phone, { v: 1, profiles: { '2530x1170': profile('diagonal', 18, { diagIn: 6.1, aspect: 2.16 }) }, active: '2530x1170', borrowed: {} });

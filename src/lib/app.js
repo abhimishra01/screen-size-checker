@@ -28,12 +28,21 @@ export function initChecker() {
   const toastEl = $('toast');
 
   const dpr = () => window.devicePixelRatio || 1;
-  const env = () => ({
-    sw: window.screen.width, sh: window.screen.height,
-    aw: window.screen.availWidth, ah: window.screen.availHeight,
-    ow: window.outerWidth, oh: window.outerHeight,
-    iw: window.innerWidth, ih: window.innerHeight, dpr: dpr(),
-  });
+  // iPhone and iPad Safari report the screen in portrait even when the device is turned. Follow the real orientation.
+  const turned = () => {
+    const type = (window.screen.orientation && window.screen.orientation.type) || '';
+    return type.startsWith('landscape') && window.screen.width < window.screen.height;
+  };
+  const env = () => {
+    const t = turned();
+    const s = window.screen;
+    return {
+      sw: t ? s.height : s.width, sh: t ? s.width : s.height,
+      aw: t ? s.availHeight : s.availWidth, ah: t ? s.availWidth : s.availHeight,
+      ow: window.outerWidth, oh: window.outerHeight,
+      iw: window.innerWidth, ih: window.innerHeight, dpr: dpr(),
+    };
+  };
   function resolve() {
     sig = screenSignature(window.screen.width, window.screen.height, dpr());
     state = measureState(pickProfile(store, sig));
@@ -279,7 +288,8 @@ export function initChecker() {
     } else if (pts.has(e.pointerId)) {
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (drag.mode === 'move' && pts.size === 1) {
-        objEl.style.left = `${drag.l + e.clientX - drag.x}px`;
+        // Keep at least 40 px of the outline on screen, so it cannot be lost.
+        objEl.style.left = `${Math.min(window.innerWidth - 40, Math.max(40 - cal.cssW, drag.l + e.clientX - drag.x))}px`;
         objEl.style.top = `${Math.max(30, drag.t + e.clientY - drag.y)}px`;
         sizeObject();
       } else if (drag.mode === 'pinch' && pts.size === 2) {
