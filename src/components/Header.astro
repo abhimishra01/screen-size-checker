@@ -1,0 +1,45 @@
+---
+import site from '../site.config.ts';
+import ThemeToggle from './ThemeToggle.astro';
+import { url, stripBase } from '../lib/url.ts';
+interface Props { calibrate?: boolean; }
+const { calibrate = false } = Astro.props;
+const path = stripBase(Astro.url.pathname);
+const links = [
+  { href: '/', label: 'Checker' },
+  { href: '/about/', label: 'About' },
+  { href: '/contact/', label: 'Contact' },
+];
+---
+<header class="sticky top-0 z-20 h-14 border-b border-line bg-paper/90 backdrop-blur">
+  <div class="mx-auto flex h-full max-w-5xl items-center justify-between gap-4 px-4">
+    <a href={url()} class="flex items-center gap-2.5 font-bold tracking-tight text-ink no-underline">
+      <img src={url('favicon.svg')} alt="" width="28" height="28" class="h-7 w-7" />
+      <span class="whitespace-nowrap max-[430px]:whitespace-normal max-[430px]:text-sm max-[430px]:leading-tight">{site.name}</span>
+    </a>
+    <div class="flex items-center gap-1">
+      <a href="https://bingemind.com/tools/" class="whitespace-nowrap rounded-lg px-3 py-3 text-sm font-medium text-brand-ink no-underline hover:underline max-[420px]:px-2 max-[420px]:text-xs">More free tools</a>
+      <nav aria-label="Main" class="flex items-center max-[480px]:hidden">
+        {links.map((l) => (
+          <a href={url(l.href)} aria-current={path === l.href ? 'page' : undefined}
+            class="rounded-lg px-3 py-2.5 text-sm font-medium text-muted no-underline hover:text-ink aria-[current=page]:text-ink aria-[current=page]:bg-brand-soft">{l.label}</a>
+        ))}
+      </nav>
+      <details class="menu relative min-[481px]:hidden">
+        <summary class="flex min-h-[44px] cursor-pointer list-none items-center rounded-lg border border-edge bg-card px-4 text-sm font-semibold text-ink [&::-webkit-details-marker]:hidden">Menu</summary>
+        <nav aria-label="Menu" class="absolute right-0 top-12 z-30 flex w-56 flex-col rounded-2xl border border-edge bg-card p-2 shadow-lg">
+          {links.map((l) => (
+            <a href={url(l.href)} class="flex min-h-[44px] items-center rounded-xl px-3 text-sm font-medium text-ink no-underline hover:bg-brand-soft">{l.label}</a>
+          ))}
+        </nav>
+      </details>
+      {calibrate && (
+        <div class="hcal">
+          <span class="chip chip-static" data-cal-chip data-kind="estimate"><span class="dot" aria-hidden="true"></span><span data-cal-chip-text>Not measured</span></span>
+          <button type="button" class="btn" data-cal-open aria-haspopup="dialog">Measure</button>
+        </div>
+      )}
+      <ThemeToggle />
+    </div>
+  </div>
+</header>

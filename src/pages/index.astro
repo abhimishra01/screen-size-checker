@@ -1,0 +1,103 @@
+---
+import Base from '../layouts/Base.astro';
+import Checker from '../components/Checker.astro';
+import AdSlot from '../components/AdSlot.astro';
+import Faq from '../components/Faq.astro';
+import site from '../site.config.ts';
+import { faq } from '../data/faq.ts';
+import { SIZE_GROUPS } from '../lib/sizes.js';
+import { panelFromDiagonal } from '../lib/calibration.js';
+
+const title = 'Screen Size Checker: Measure Your Screen in Inches';
+const here = `${site.origin}/`;
+const jsonLd = [
+  {
+    '@context': 'https://schema.org', '@type': 'WebApplication', name: site.name, url: here, description: site.description,
+    applicationCategory: site.category, operatingSystem: 'All', browserRequirements: 'Requires JavaScript', inLanguage: site.locale,
+    screenshot: `${site.origin}/og.png`, offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    author: { '@type': 'Person', name: 'Abhishek Mishra', jobTitle: 'Software Development Engineer', url: 'https://bingemind.com/abhishek-mishra/' },
+    publisher: { '@type': 'Organization', name: 'Bingemind', url: 'https://bingemind.com/' },
+  },
+  { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) },
+  {
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Free tools', item: 'https://bingemind.com/tools/' },
+      { '@type': 'ListItem', position: 2, name: 'Screen size checker', item: here },
+    ],
+  },
+];
+const r1 = (n: number) => n.toFixed(1);
+const groups = SIZE_GROUPS.map((g) => ({
+  ...g,
+  rows: g.rows.map((r) => {
+    const p = panelFromDiagonal(r.diag, r.ratio);
+    return { ...r, id: `${g.id}-${r.diag}`, wIn: p.longMm / 25.4, hIn: p.shortMm / 25.4, wCm: p.longMm / 10, hCm: p.shortMm / 10 };
+  }),
+}));
+---
+<Base fullTitle={title} description={site.description} jsonLd={jsonLd} calibrate>
+  <Checker />
+  <AdSlot />
+  <article class="mx-auto max-w-5xl px-4 pt-14">
+    <div class="prose-site">
+      <h2>How to check your screen size with a card</h2>
+      <ol>
+        <li>Press <strong>Measure with a card</strong> on the result card, or <strong>Measure</strong> at the top of the page.</li>
+        <li>Hold a bank card flat against the screen, on the outline.</li>
+        <li>Line up the left edges. Drag the grip until the right edge of the outline meets the right edge of the card. Use the 0.1 mm buttons for the last bit.</li>
+        <li>Press <strong>My card matches</strong>. The checker shows the diagonal, width, height and pixel density of your screen.</li>
+      </ol>
+      <p>The match is saved in this browser for this screen. Come back later and the size is there. Plug in another monitor and it asks for a new match, because each screen has its own pixel size.</p>
+
+      <h2>Why other screen size checkers guess</h2>
+      <p>A web page can read how many pixels your screen has. It cannot read how wide a pixel is. A 1920 by 1080 screen can be a 13 inch laptop or a 27 inch monitor. So a site that shows inches the moment it loads has to guess, from the resolution or a list of devices. We tried one such site on a laptop. It said 13.4 inches on its home page and 15.7 inches on another page for the same screen.</p>
+      <p>A card fixes this. Every bank card is 85.6 mm wide. When the outline matches the card, the page knows how many pixels make a millimeter on your screen. Then the size is simple math: the pixels across divided by pixels per millimeter gives the width, and the same for the height. The diagonal comes from the width and height.</p>
+
+      <h2>Worked example: a 15.6 inch laptop</h2>
+      <p>A common laptop has a 1920 by 1080 screen. After a card match the checker finds about 5.56 pixels per millimeter. The width is 1920 / 5.56 = 345 mm (13.6 in). The height is 1080 / 5.56 = 194 mm (7.65 in). The diagonal is the square root of 13.6&sup2; + 7.65&sup2;, which is 15.6 inches. The pixel density is 141 pixels per inch.</p>
+
+      <h2>Common screen sizes</h2>
+      <p>Width and height are for the visible picture. Your screen is marked after you measure it.</p>
+    </div>
+    <div class="tbl-wrap sizes mt-2 max-w-4xl" tabindex="0" role="region" aria-label="Common screen sizes table">
+      <table class="tbl">
+        <caption>Screen sizes with width and height</caption>
+        <thead><tr><th scope="col">Size</th><th scope="col">Width &times; height (in)</th><th scope="col">Width &times; height (cm)</th><th scope="col">Shape</th><th scope="col">Typical use</th></tr></thead>
+        {groups.map((g) => (
+          <tbody>
+            <tr class="grp"><th scope="colgroup" colspan="5">{g.name}</th></tr>
+            {g.rows.map((r) => (
+              <tr data-size={r.id}>
+                <th scope="row">{r.diag} in<span class="yours"></span></th>
+                <td>{r1(r.wIn)} &times; {r1(r.hIn)}</td>
+                <td>{r1(r.wCm)} &times; {r1(r.hCm)}</td>
+                <td>{r.ratioLabel}</td>
+                <td>{r.note}</td>
+              </tr>
+            ))}
+          </tbody>
+        ))}
+      </table>
+    </div>
+    <div class="prose-site">
+      <h2>How to measure a screen by hand</h2>
+      <p>Take a tape measure. Measure from the top left corner of the lit picture to the bottom right corner. Leave out the plastic or metal frame (the bezel). The number in inches is the screen size that shops use. For a curved monitor, let the tape follow the curve.</p>
+
+      <h2>Where else to find the size</h2>
+      <ul>
+        <li><strong>Mac:</strong> Apple menu, About This Mac. The model name often includes the size, such as "13-inch".</li>
+        <li><strong>Windows:</strong> Settings, System, About shows the model. Search the model name to find its screen size. Settings, System, Display shows the resolution, not the size.</li>
+        <li><strong>iPhone and iPad:</strong> Settings, General, About, Model Name.</li>
+        <li><strong>Android:</strong> Settings, About phone, then search the model name.</li>
+        <li><strong>Monitor:</strong> the label on the back. Two digits in the model name are often the size, for example 27 in a "U27" model.</li>
+      </ul>
+
+      <h2>Screen size, resolution and PPI</h2>
+      <p><strong>Screen size</strong> is the physical diagonal. <strong>Resolution</strong> is the pixel count, such as 2560 by 1440. <strong>Pixel density</strong> (PPI) is how many pixels fit in one inch. A 27 inch 1440p monitor has about 109 PPI. A 27 inch 4K monitor has about 163 PPI, so text looks sharper at the same size.</p>
+      <p>Phones and Macs draw more pixels than the page sees. A pixel ratio of 2 means each CSS pixel uses 2 by 2 device pixels. Windows display scaling of 125 or 150 percent does the same. The checker shows both numbers. If your system scales the display to a "looks like" size, the pixel density it shows is for the pixels your computer draws, which can differ from the panel's own count.</p>
+      <p>Already matched a card in our <a href="https://bingemind.com/online-ruler/">online ruler</a>? This checker reads the same saved match, so your size shows at once.</p>
+    </div>
+  </article>
+  <Faq items={faq} />
+</Base>

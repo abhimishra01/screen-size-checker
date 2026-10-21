@@ -1,0 +1,90 @@
+---
+// The checker: result card, the facts the browser reports, and the card-match dialog.
+// The dialog never opens on its own. It opens from the header button or the result card corner.
+import '../styles/tool.css';
+const facts = [
+  ['res', 'Resolution', 'device pixels'],
+  ['scr', 'Screen', 'CSS pixels'],
+  ['dpr', 'Pixel ratio', 'device pixels per CSS pixel'],
+  ['asp', 'Aspect ratio', 'width to height'],
+  ['ppi', 'Pixel density', 'pixels per inch'],
+  ['vp', 'Browser viewport', 'the part that shows the page'],
+  ['vpin', 'Viewport size', 'real size'],
+  ['avl', 'Available screen', 'without taskbar or Dock'],
+  ['win', 'Browser window', 'CSS pixels'],
+  ['cpi', 'CSS pixels per inch', 'on this screen'],
+  ['col', 'Color depth', 'bits per pixel'],
+  ['ori', 'Orientation', 'and touch'],
+];
+---
+<section id="tool" class="tool mx-auto max-w-5xl px-4 pt-6 sm:pt-10" aria-labelledby="h1" data-ready="false">
+  <h1 id="h1" class="text-2xl font-bold tracking-tight sm:text-4xl">Screen size checker</h1>
+  <p class="mt-2 max-w-2xl text-muted sm:text-lg">Your real screen size in inches and cm. A browser only knows pixels, so you match a bank card to the screen once and the page measures it.</p>
+
+  <div class="result mt-5" data-state="none">
+    <div class="r-top">
+      <p class="r-label">Your screen</p>
+      <div class="r-corner">
+        <span class="chip chip-static" data-cal-chip data-kind="estimate" role="status"><span class="dot" aria-hidden="true"></span><span data-cal-chip-text>Not measured</span></span>
+        <button type="button" class="btn primary" data-cal-open aria-haspopup="dialog"><span data-cal-btn-text>Measure with a card</span></button>
+      </div>
+    </div>
+
+    <div class="r-body">
+      <p class="r-big"><span id="r-diag">Not measured yet</span><span id="r-diag-cm" class="r-cm"></span></p>
+      <p id="r-wh" class="r-wh">Browsers report pixels, not inches. Any site that prints inches without a card match is guessing.</p>
+      <p id="r-note" class="r-note">Press <strong>Measure with a card</strong>, hold a bank card flat on the screen, and drag the outline to fit. It takes about 20 seconds.</p>
+    </div>
+
+    <div class="r-actions">
+      <button type="button" class="btn" id="copy">Copy results</button>
+      <span id="copy-msg" class="small" role="status"></span>
+    </div>
+  </div>
+
+  <dl class="facts mt-4" aria-label="What your browser reports">
+    {facts.map(([id, k, hint]) => (
+      <div class="fact"><dt>{k}<span class="f-hint">{hint}</span></dt><dd id={'f-' + id}>&nbsp;</dd></div>
+    ))}
+  </dl>
+  <p class="mt-3 max-w-3xl text-sm text-muted"><strong class="text-ink">Screen</strong> is the whole display. <strong class="text-ink">Viewport</strong> is the part of the browser window that shows the page. <span id="ppi-note">Pixel density counts the pixels your computer draws. If your system scales the display, the panel's own pixel count can differ, and a browser cannot see it.</span></p>
+  <noscript><p class="mt-3 font-semibold">The checker needs JavaScript to read your screen. Turn it on to measure.</p></noscript>
+</section>
+
+<dialog id="cal" class="cal-dlg" aria-labelledby="cal-h">
+  <div id="obj" class="obj">
+    <span id="obj-l" class="obj-l">Bank card: 85.6 mm</span>
+    <div id="obj-h" class="obj-h" role="slider" tabindex="0" aria-label="Card width. Arrow keys change it by 0.1 millimeter, Shift and arrow by 1 millimeter." aria-valuemin="1" aria-valuemax="40" aria-valuenow="4"><i></i></div>
+  </div>
+
+  <div class="cal-panel">
+    <div class="cal-top">
+      <h2 id="cal-h" tabindex="-1">Match your card</h2>
+      <button type="button" id="cal-close" class="btn" aria-label="Close without saving">Close</button>
+    </div>
+    <ol class="steps">
+      <li>Hold a bank card flat against the screen.</li>
+      <li>Line up its left edge with the outline.</li>
+      <li>Drag the grip on the right until the right edge matches.</li>
+    </ol>
+    <p id="rot-note" class="small" hidden>Your screen is narrow, so the card stands on its short side (53.98 mm).</p>
+    <div class="row">
+      <button type="button" class="btn" data-nudge="-0.1" aria-label="Smaller by 0.1 millimeter">&minus; 0.1 mm</button>
+      <button type="button" class="btn" data-nudge="0.1" aria-label="Larger by 0.1 millimeter">+ 0.1 mm</button>
+      <button type="button" class="btn" id="rotate">Turn card</button>
+    </div>
+    <div class="row">
+      <button type="button" class="btn primary" id="fit">My card matches</button>
+      <button type="button" class="btn" id="reset" hidden>Forget this screen</button>
+    </div>
+    <p id="cal-err" class="err" role="alert"></p>
+    <p id="pinch" class="err" role="alert" hidden>Pinch zoom is on, so the outline is not true size. Zoom out to 100 percent first.</p>
+    <p class="small">Any card in the standard size works: credit, debit, driver's license, library or gift card. Keep the browser zoom at 100 percent. The match is saved only in this browser, and the <a href="https://bingemind.com/online-ruler/">online ruler</a> on this site uses it too.</p>
+  </div>
+</dialog>
+
+<p id="toast" class="toast" role="status" hidden></p>
+<script>
+  import { initChecker } from '../lib/app.js';
+  initChecker();
+</script>
