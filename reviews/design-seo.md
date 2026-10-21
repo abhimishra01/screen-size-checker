@@ -1,5 +1,5 @@
 # Design and SEO review (Kim, 2026-10-21)
-Lighthouse (local build, Chrome headless): mobile 100 / 100 / 100 / 100, desktop 100 / 100 / 100 / 100 (perf, a11y, best practices, SEO). LCP 1.4 s mobile, 0.3 s desktop; CLS 0 / 0.006. Compression and cache flags come from the local python server, not the site.
+Lighthouse (local build, Chrome headless), run before and again after the fixes (commit 5648eba): mobile 100 / 100 / 100 / 100, desktop 100 / 100 / 100 / 100 (perf, a11y, best practices, SEO). After fixes: LCP 1.4 s mobile, 0.4 s desktop; CLS 0 / 0.006. Fixed desktop re-checked at 1440 in dark (page and panel). Compression and cache flags come from the local python server, not the site.
 Checked with playwright-cli at 1440 and 390 (iPhone 13 device, 664 px tall window), iPad 810x1080, light and dark. Every control clicked: header Measure, card Measure, -0.1/+0.1 mm, Turn card, grip drag, outline move, My card matches, Close, Escape, Forget this screen, Copy results, theme, Menu, FAQ.
 
 | Sev | Area | Finding | Fix |

@@ -3,8 +3,8 @@
 Lenses run per briefs/review-all.md: code-maintainer, code-minimalism, code-regression, code-readability, design-seo, customers (10 personas). Reports in this folder.
 
 ## Result
-- Maths: correct. Hand results match the page for 10 devices (Apple and Samsung specs, ISO/IEC 7810 card). Calibration file byte-identical to the online ruler; key `bm.calibration.v1`; other profiles and borrowed entries survive a save.
-- Lighthouse local: 100 / 100 / 100 / 100 mobile and desktop.
+- Maths: correct. With an exact card fit, hand results match the page for 10 devices (Apple and Samsung specs, ISO/IEC 7810 card). Calibration file byte-identical to the online ruler; key `bm.calibration.v1`; other profiles and borrowed entries survive a save.
+- Lighthouse local, re-run after the fixes: 100 / 100 / 100 / 100 mobile and desktop.
 - Must-fix found per lens: maintainer 0, minimalism 0, regression 1, readability 0, design-seo 2, customers 2 (overlapping). All fixed.
 
 ## Fixes (all committed in the site folder)
