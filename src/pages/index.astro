@@ -7,6 +7,7 @@ import site from '../site.config.ts';
 import { faq } from '../data/faq.ts';
 import { SIZE_GROUPS } from '../lib/sizes.js';
 import { panelFromDiagonal } from '../lib/calibration.js';
+import { aspect } from '../lib/screen.js';
 
 const title = 'Screen Size Checker: Measure Your Screen in Inches';
 const here = `${site.origin}/`;
@@ -32,7 +33,7 @@ const groups = SIZE_GROUPS.map((g) => ({
   ...g,
   rows: g.rows.map((r) => {
     const p = panelFromDiagonal(r.diag, r.ratio);
-    return { ...r, id: `${g.id}-${r.diag}`, wIn: p.longMm / 25.4, hIn: p.shortMm / 25.4, wCm: p.longMm / 10, hCm: p.shortMm / 10 };
+    return { ...r, id: `${g.id}-${r.diag}`, shape: aspect(r.px[0], r.px[1]).short, wIn: p.longMm / 25.4, hIn: p.shortMm / 25.4, wCm: p.longMm / 10, hCm: p.shortMm / 10 };
   }),
 }));
 ---
@@ -43,7 +44,7 @@ const groups = SIZE_GROUPS.map((g) => ({
     <div class="prose-site">
       <h2>How to check your screen size with a card</h2>
       <ol>
-        <li>Press <strong>Measure with a card</strong> on the result card, or <strong>Measure</strong> at the top of the page.</li>
+        <li>Press <strong>Measure with a card</strong> on the result card, or <strong>Measure</strong> at the top of the page on a wide screen.</li>
         <li>Hold a bank card flat against the screen, on the outline.</li>
         <li>Line up the left edges. Drag the grip until the right edge of the outline meets the right edge of the card. Use the 0.1 mm buttons for the last bit.</li>
         <li>Press <strong>My card matches</strong>. The checker shows the diagonal, width, height and pixel density of your screen.</li>
@@ -58,12 +59,12 @@ const groups = SIZE_GROUPS.map((g) => ({
       <p>A common laptop has a 1920 by 1080 screen. After a card match the checker finds about 5.56 pixels per millimeter. The width is 1920 / 5.56 = 345 mm (13.6 in). The height is 1080 / 5.56 = 194 mm (7.65 in). The diagonal is the square root of 13.6&sup2; + 7.65&sup2;, which is 15.6 inches. The pixel density is 141 pixels per inch.</p>
 
       <h2>Common screen sizes</h2>
-      <p>Width and height are for the visible picture. Your screen is marked after you measure it.</p>
+      <p>Sides are for the visible picture, long side first. Your screen is marked after you measure it.</p>
     </div>
     <div class="tbl-wrap sizes mt-2 max-w-4xl" tabindex="0" role="region" aria-label="Common screen sizes table">
       <table class="tbl">
-        <caption>Screen sizes with width and height</caption>
-        <thead><tr><th scope="col">Size</th><th scope="col">Width &times; height (in)</th><th scope="col">Width &times; height (cm)</th><th scope="col">Shape</th><th scope="col">Typical use</th></tr></thead>
+        <caption>Common screen sizes, long and short side</caption>
+        <thead><tr><th scope="col">Size</th><th scope="col">Long &times; short side (in)</th><th scope="col">Long &times; short side (cm)</th><th scope="col">Shape</th><th scope="col">Typical use</th></tr></thead>
         {groups.map((g) => (
           <tbody>
             <tr class="grp"><th scope="colgroup" colspan="5">{g.name}</th></tr>
@@ -72,7 +73,7 @@ const groups = SIZE_GROUPS.map((g) => ({
                 <th scope="row">{r.diag} in<span class="yours"></span></th>
                 <td>{r1(r.wIn)} &times; {r1(r.hIn)}</td>
                 <td>{r1(r.wCm)} &times; {r1(r.hCm)}</td>
-                <td>{r.ratioLabel}</td>
+                <td>{r.shape}</td>
                 <td>{r.note}</td>
               </tr>
             ))}

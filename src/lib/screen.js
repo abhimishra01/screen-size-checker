@@ -32,11 +32,11 @@ export const NAMED_RATIOS = [
 /**
  * Aspect ratio in words. The long side comes first in the name, and the order follows the screen
  * (a portrait phone gives "9:19.5").
- * Returns { text, exact, near, value } where value is long / short.
+ * Returns { text, short, exact, near, value }. value is long / short; short is the label without the decimal.
  */
 export function aspect(w, h) {
   w = Math.round(w); h = Math.round(h);
-  if (!(w > 0 && h > 0)) return { text: '', exact: null, near: null, value: NaN };
+  if (!(w > 0 && h > 0)) return { text: '', short: '', exact: null, near: null, value: NaN };
   const portrait = h > w;
   const long = Math.max(w, h), short = Math.min(w, h);
   const value = long / short;
@@ -46,7 +46,7 @@ export function aspect(w, h) {
   const named = NAMED_RATIOS.find(([, v]) => Math.abs(v - value) < 1e-9);
   if (named) {
     const [x, y] = named[0].split(':');
-    return { text: order(x, y), exact: order(x, y), near: null, value };
+    return { text: order(x, y), short: order(x, y), exact: order(x, y), near: null, value };
   }
   let best = null;
   for (const [name, v] of NAMED_RATIOS) {
@@ -57,10 +57,10 @@ export function aspect(w, h) {
   if (best) {
     const [x, y] = best.name.split(':');
     const near = order(x, y);
-    return { text: `about ${near} (${dec})`, exact: null, near, value };
+    return { text: `about ${near} (${dec})`, short: `about ${near}`, exact: null, near, value };
   }
-  if (a <= 50 && b <= 50) return { text: `${order(a, b)} (${dec})`, exact: order(a, b), near: null, value };
-  return { text: dec, exact: null, near: null, value };
+  if (a <= 50 && b <= 50) return { text: `${order(a, b)} (${dec})`, short: dec, exact: order(a, b), near: null, value };
+  return { text: dec, short: dec, exact: null, near: null, value };
 }
 
 /** Fixed decimals without trailing zeros: fix(13.30, 2) gives "13.3". */
@@ -143,7 +143,7 @@ export function summaryText(r, status) {
   if (r.phys) {
     lines.push(`Screen size: ${one(r.phys.diagIn)} in (${one(r.phys.diagMm / 10)} cm) diagonal`);
     lines.push(`Width x height: ${one(r.phys.wIn)} x ${one(r.phys.hIn)} in (${one(r.phys.wMm / 10)} x ${one(r.phys.hMm / 10)} cm)`);
-    lines.push(`Pixel density: ${Math.round(r.ppi)} pixels per inch`);
+    lines.push(`Pixel density: ${Math.round(r.ppi)} rendered pixels per inch`);
   } else {
     lines.push('Screen size: not measured (match a bank card on the page to measure it)');
   }

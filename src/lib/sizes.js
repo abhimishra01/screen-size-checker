@@ -1,45 +1,54 @@
 // Common screen sizes, used by the comparison table and the "closest common size" line.
-// diag = marketed diagonal in inches. ratio = long side / short side of the visible panel.
-// Ratios come from the native resolution of typical panels at that size (for example 2560 x 1664 for a 13.6 in laptop).
+// diag = marketed diagonal in inches. px = native resolution of a typical panel at that size, long side first.
+// The table's shape label comes from px through aspect(), so it matches the shape shown for a measured screen.
+
+const row = (diag, w, h, note) => ({ diag, px: [w, h], ratio: w / h, note });
 
 export const SIZE_GROUPS = [
   {
     id: 'phone', name: 'Phones', rows: [
-      { diag: 5.4, ratio: 19.5 / 9, ratioLabel: '19.5:9', note: 'Small phones' },
-      { diag: 6.1, ratio: 19.5 / 9, ratioLabel: '19.5:9', note: 'Most standard phones' },
-      { diag: 6.3, ratio: 19.5 / 9, ratioLabel: '19.5:9', note: 'Standard phones, newer models' },
-      { diag: 6.7, ratio: 19.5 / 9, ratioLabel: '19.5:9', note: 'Large phones' },
-      { diag: 6.9, ratio: 19.5 / 9, ratioLabel: '19.5:9', note: 'The largest phones' },
+      row(5.4, 2340, 1080, 'Small phones'),
+      row(5.8, 2436, 1125, 'Older small phones'),
+      row(6.1, 2532, 1170, 'Most standard phones'),
+      row(6.3, 2622, 1206, 'Standard phones, newer models'),
+      row(6.5, 2688, 1242, 'Older large phones'),
+      row(6.7, 2778, 1284, 'Large phones'),
+      row(6.8, 3088, 1440, 'Large Android phones'),
+      row(6.9, 2868, 1320, 'The largest phones'),
     ],
   },
   {
     id: 'tablet', name: 'Tablets', rows: [
-      { diag: 8.3, ratio: 2266 / 1488, ratioLabel: 'about 3:2', note: 'Small tablets' },
-      { diag: 10.9, ratio: 2360 / 1640, ratioLabel: 'about 10:7', note: 'Standard tablets' },
-      { diag: 11, ratio: 2420 / 1668, ratioLabel: 'about 10:7', note: '11 in tablets' },
-      { diag: 13, ratio: 4 / 3, ratioLabel: '4:3', note: 'Large tablets' },
+      row(8.3, 2266, 1488, 'Small tablets'),
+      row(10.2, 2160, 1620, 'Older standard tablets'),
+      row(10.9, 2360, 1640, 'Standard tablets'),
+      row(11, 2420, 1668, '11 in tablets'),
+      row(13, 2752, 2064, 'Large tablets (12.9 and 13 in)'),
     ],
   },
   {
     id: 'laptop', name: 'Laptops', rows: [
-      { diag: 11.6, ratio: 16 / 9, ratioLabel: '16:9', note: 'Small school laptops' },
-      { diag: 13.3, ratio: 16 / 10, ratioLabel: '16:10', note: 'Small laptops' },
-      { diag: 13.6, ratio: 2560 / 1664, ratioLabel: 'about 16:10', note: '13 in thin laptops' },
-      { diag: 14, ratio: 16 / 10, ratioLabel: '16:10', note: 'Everyday laptops' },
-      { diag: 15.3, ratio: 2880 / 1864, ratioLabel: 'about 16:10', note: '15 in thin laptops' },
-      { diag: 15.6, ratio: 16 / 9, ratioLabel: '16:9', note: 'Most 15 in laptops' },
-      { diag: 16, ratio: 16 / 10, ratioLabel: '16:10', note: 'Large laptops' },
-      { diag: 17.3, ratio: 16 / 9, ratioLabel: '16:9', note: 'Desktop replacement laptops' },
+      row(11.6, 1366, 768, 'Small school laptops'),
+      row(13.3, 2560, 1600, 'Small laptops'),
+      row(13.6, 2560, 1664, '13 in thin laptops'),
+      row(14, 1920, 1200, 'Everyday laptops'),
+      row(14.2, 3024, 1964, '14 in pro laptops'),
+      row(15.3, 2880, 1864, '15 in thin laptops'),
+      row(15.6, 1920, 1080, 'Most 15 in laptops'),
+      row(16, 1920, 1200, 'Large laptops'),
+      row(16.2, 3456, 2234, '16 in pro laptops'),
+      row(17.3, 1920, 1080, 'Desktop replacement laptops'),
     ],
   },
   {
     id: 'monitor', name: 'Monitors', rows: [
-      { diag: 21.5, ratio: 16 / 9, ratioLabel: '16:9', note: 'Small monitors' },
-      { diag: 23.8, ratio: 16 / 9, ratioLabel: '16:9', note: 'Sold as 24 in' },
-      { diag: 27, ratio: 16 / 9, ratioLabel: '16:9', note: 'Common desk monitors' },
-      { diag: 31.5, ratio: 16 / 9, ratioLabel: '16:9', note: 'Sold as 32 in' },
-      { diag: 34, ratio: 3440 / 1440, ratioLabel: 'about 21:9', note: 'Ultrawide' },
-      { diag: 49, ratio: 32 / 9, ratioLabel: '32:9', note: 'Super ultrawide' },
+      row(21.5, 1920, 1080, 'Small monitors'),
+      row(23.8, 1920, 1080, 'Sold as 24 in'),
+      row(24.5, 1920, 1080, 'Gaming monitors, sold as 25 in'),
+      row(27, 2560, 1440, 'Common desk monitors'),
+      row(31.5, 2560, 1440, 'Sold as 32 in'),
+      row(34, 3440, 1440, 'Ultrawide'),
+      row(49, 5120, 1440, 'Super ultrawide'),
     ],
   },
 ];

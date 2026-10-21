@@ -67,6 +67,10 @@ eq(aspect(3440, 1440).text, 'about 21:9 (2.39:1)', 'ultrawide');
 eq(aspect(1024, 768).text, '4:3', '4:3');
 eq(aspect(1280, 1024).text, '5:4', '5:4');
 eq(aspect(0, 768).text, '', 'zero width');
+// The table's shape label is the short form, so the table and a measured screen use the same words.
+eq(aspect(2560, 1664).short, '1.54:1', 'short label, unnamed ratio');
+eq(aspect(2532, 1170).short, 'about 19.5:9', 'short label, near a named ratio');
+eq(aspect(1920, 1080).short, '16:9', 'short label, named ratio');
 
 // 8. Formatting.
 eq(fix(13.30, 2), '13.3', 'fix trims');
@@ -78,9 +82,13 @@ eq(one(NaN), '', 'one NaN');
 eq(closestSize(23.8).diag, 23.8, '24 in monitor');
 eq(closestSize(15.55).diag, 15.6, '15.6 laptop measured a bit small');
 eq(closestSize(40), null, 'nothing near 40 in');
+eq(closestSize(24.45).diag, 24.5, '25 in gaming monitor');
+eq(closestSize(5.85).diag, 5.8, '5.8 in phone');
+eq(closestSize(10.2).diag, 10.2, '10.2 in tablet');
+eq(closestSize(14.2).diag, 14.2, '14 in pro laptop');
 eq(closestSize(NaN), null, 'NaN');
 eq(new Set(ALL_SIZES.map((x) => x.id)).size, ALL_SIZES.length, 'size ids unique');
-for (const g of SIZE_GROUPS) for (const r of g.rows) assert.ok(r.ratio >= 1 && r.diag > 0, 'size rows sane');
+for (const g of SIZE_GROUPS) for (const r of g.rows) assert.ok(r.ratio >= 1 && r.diag > 0 && r.px[0] >= r.px[1], 'size rows sane');
 
 // 10. The shared record: what this tool may call "measured".
 const sig = '2880x1800';
@@ -122,6 +130,7 @@ near(r.viewPhys.hIn, 789 / 900 * r.phys.hIn, 1e-9, 'viewport height');
 let t = summaryText(r, 'Measured');
 assert.ok(t.includes('Screen size: 13.3 in (33.8 cm) diagonal'), t);
 assert.ok(t.includes('Resolution: 2880 x 1800 device pixels'), t);
+assert.ok(t.includes('Pixel density: 255 rendered pixels per inch'), t);
 r = report(env, 0);
 eq(r.phys, null, 'no calibration, no inches');
 t = summaryText(r);

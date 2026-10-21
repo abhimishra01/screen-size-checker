@@ -10,6 +10,7 @@ const $ = (id) => document.getElementById(id);
 function safeStorage() { try { return window.localStorage; } catch { return null; } }
 const blockedStore = { getItem() { throw new Error('no storage'); }, setItem() { throw new Error('no storage'); } };
 const NEEDS = 'Needs a card match';
+const NARROW = '(max-width: 700px), (pointer: coarse) and (max-width: 1100px)';
 const times = (a, b) => `${a} × ${b}`;
 
 export function initChecker() {
@@ -67,7 +68,7 @@ export function initChecker() {
       const how = `Measured with a card on this screen${when ? ` on ${when}` : ''}.`;
       set('r-note', r.closest
         ? `Closest common size: ${r.closest.diag} in (${r.closest.note.toLowerCase()}). Sizes on the box are rounded, so a small gap is normal. ${how}`
-        : `This is not close to a common size. Check the card match, or measure the screen with a tape. ${how}`);
+        : `This is not close to a size in our list. Some screens are less common, so this can be right. If it looks wrong, match the card again or measure with a tape. ${how}`);
     } else {
       set('r-diag', state.kind === 'other' ? 'Not measured on this screen' : 'Not measured yet');
       set('r-diag-cm', '');
@@ -152,7 +153,8 @@ export function initChecker() {
   // ---------- card match
   // per = CSS px per mm the user has set. It survives Turn card even when the outline must be cut to fit.
   const cal = { rotated: false, cssW: 300, per: 4 };
-  const isPhone = () => window.innerWidth <= 700;
+  // Phones and touch tablets: the panel sits at the bottom so the card can lie flat across the screen. Keep in step with tool.css.
+  const isPhone = () => matchMedia(NARROW).matches;
   const spec = () => (cal.rotated ? { wMm: CARD.h, hMm: CARD.w } : { wMm: CARD.w, hMm: CARD.h });
   function startCssPerMm() {
     if (state.profile) return state.profile.devPxPerMm / dpr();
@@ -162,7 +164,6 @@ export function initChecker() {
   const roomW = () => window.innerWidth - (isPhone() ? 32 : 460);
 
   function placeObject() {
-    const s = spec();
     const left = isPhone() ? Math.max(4, Math.min((window.innerWidth - cal.cssW) / 2 - 12, window.innerWidth - cal.cssW - 12)) : Math.max(24, (roomW() - cal.cssW) / 2);
     const top = isPhone() ? 40 : 110;
     objEl.style.left = `${Math.round(left)}px`;
