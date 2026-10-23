@@ -27,7 +27,7 @@ export default {
   domain: 'bingemind.com/screen-size-checker',
   origin: 'https://bingemind.com/screen-size-checker',
   bingemind,
-  owner: bingemind ? 'Bingemind' : cfg.owner,
+  owner: bingemind ? 'Bingemind (Abhishek Mishra)' : cfg.owner,
   // Every build uses the Bingemind contact page, as the other Bingemind tools do. No email address is shown.
   contactWord: 'Contact',
   contactHref: 'https://bingemind.com/#contact',
