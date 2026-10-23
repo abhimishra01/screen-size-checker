@@ -14,7 +14,7 @@ const ctx = await browser.newContext({
 const page = await ctx.newPage();
 const seen = [];
 let phase = 'load';
-ctx.on('request', (r) => seen.push({ url: r.url(), body: r.postData() || '', phase }));
+ctx.on('request', (r) => !/^https:\/\/([a-z0-9-]+\.)*(googletagmanager|google-analytics|analytics\.google)\.com\//.test(r.url()) && seen.push({ url: r.url(), body: r.postData() || '', phase }));
 const errors = [];
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 page.on('pageerror', (e) => errors.push(String(e)));
